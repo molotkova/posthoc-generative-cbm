@@ -8,5 +8,5 @@ tensorboard
 ipykernel
 ipywidgets
 diffusers
-accelerate
+accelerate==0.15.0
 gdown
