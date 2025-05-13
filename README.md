@@ -38,11 +38,21 @@ This is the official repository for the **CVPR 2025** paper: [Interpretable Gene
     pip install -r requirements.txt
     ```
 
-* Download the CelebA-HQ-pretrained StyleGAN2 base model from [below](#download-base-model-and-cb-aecc-weights) and test the environment using `python3 eval/test_stygan2.py`. It should save a StyleGAN2 generated image in `images/`. If you get CUDA runtime errors (during "Setting up PyTorch plugin..."), use this:
+* Download the CelebA-HQ-pretrained StyleGAN2 base model from [below](#download-base-model-and-cb-aecc-weights) and test the environment using `python3 eval/test_stygan2.py`. It should save a StyleGAN2 generated image in `images/`.
+If you get CUDA runtime errors (during "Setting up PyTorch plugin..."), use this:
     ```
     export CUDA_HOME=$CONDA_PREFIX
     export CPLUS_INCLUDE_PATH=$CUDA_HOME/include:$CPLUS_INCLUDE_PATH
     export LIBRARY_PATH=$CUDA_HOME/lib:$LIBRARY_PATH
+    ```
+    Or, alternatively:
+    ```
+    conda install -c conda-forge cxx-compiler
+    conda install -c conda-forge cudatoolkit-dev
+    conda install -c conda-forge ninja cmake make gcc_linux-64 gxx_linux-64
+
+    cp /usr/include/crypt.h ~/miniconda3/include/crypt.h  # find where your crypt.h is located
+    cp /usr/include/crypt.h ~/miniconda3/envs/posthocgencbm/include  # copy it to project's environment 
     ```
 
 ### Download base model and CB-AE/CC weights
