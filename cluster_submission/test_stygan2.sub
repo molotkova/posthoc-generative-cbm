@@ -11,7 +11,7 @@ requirements = ((UidDomain == "cs.uni-saarland.de") &&  (GPUs_GlobalMemoryMb >= 
 +WantGPUHomeMounted = true
 
 request_GPUs = 1
-request_CPUs = 4
+request_CPUs = 8
 request_memory = 16G
 executable = test_stygan2_execute.sh
 
