@@ -153,7 +153,7 @@ def create_image_grid(images, labels, probs, savefile, n_row=2, n_col=4, figsize
     plt.close()
 
 # Modified from ChatGPT output
-def save_image_grid_with_labels(image_tensor, class_indices, class_names, grid_size=(8, 8), file_name='image_grid.png', font_path='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', return_images=False):
+def save_image_grid_with_labels(image_tensor, class_indices, class_names, grid_size=(8, 8), file_name='image_grid.png', font_path="", return_images=False):
     """
     Save an image tensor as a grid of images with corresponding class names overlayed.
     
@@ -183,7 +183,7 @@ def save_image_grid_with_labels(image_tensor, class_indices, class_names, grid_s
         label = class_names[idx]
         img_pil = transform(img)
         draw = ImageDraw.Draw(img_pil)
-        font = ImageFont.truetype(font_path, textsize)
+        font = ImageFont.load_default(size=textsize)
         text_bbox = draw.textbbox((0, 0), label, font=font)
         text_size = (text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1])
         text_position = (img_pil.width - text_size[0] - 5, img_pil.height - text_size[1] - 5)
@@ -202,7 +202,7 @@ def save_image_grid_with_labels(image_tensor, class_indices, class_names, grid_s
     torchvision.utils.save_image(grid, file_name, normalize=True)
 
 # Modified from ChatGPT output
-def save_image_grid_with_otherconceptinfo(image_tensor, class_indices, class_names, text_list, grid_size=(8, 8), file_name='image_grid.png', font_path='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'):
+def save_image_grid_with_otherconceptinfo(image_tensor, class_indices, class_names, text_list, grid_size=(8, 8), file_name='image_grid.png', font_path=''):
     """
     Save an image tensor as a grid of images with corresponding class names overlayed.
     
@@ -228,7 +228,7 @@ def save_image_grid_with_otherconceptinfo(image_tensor, class_indices, class_nam
         label = class_names[idx] + '\n' + temp_text
         img_pil = transform(img)
         draw = ImageDraw.Draw(img_pil)
-        font = ImageFont.truetype(font_path, 16)
+        font = ImageFont.load_default(16)
         text_bbox = draw.textbbox((0, 0), label, font=font)
         text_size = (text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1])
         text_position = (img_pil.width - text_size[0] - 5, img_pil.height - text_size[1] - 5)
