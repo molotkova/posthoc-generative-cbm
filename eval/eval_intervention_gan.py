@@ -16,7 +16,7 @@ from models import cbae_stygan2
 from torchvision import transforms, models
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-
+from datetime import datetime
 import time
 
 
@@ -295,8 +295,8 @@ def main():
         batch_size = 16
         num_steps = 5
     else:
-        batch_size = 2
-        num_steps = 100
+        batch_size = 5
+        num_steps = 2000
     print(f'saving to {save_image_loc}')
     num_target_concept = 0.0
     num_nottgt_concept = 0.0
@@ -518,6 +518,10 @@ def main():
     if args.optint:
         savefile_name = f'results/{quant_folder_name}/{args.dataset}_{args.expt_name}_{args.tensorboard_name}_optint_eps{args.optint_eps}_iters{args.optint_iters}.txt'
     with open(savefile_name, 'a') as f:
+        # Write timestamp
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        f.write(f"=== Run at {current_time} ===\n")
+        # Write concept intervention results
         f.write(f'{set_of_classes[args.concept_change][args.concept_value]:<20} | {num_succ_interv * 100.0:.2f} | {num_negative_interv * 100.0:.2f}\n')
         
         # Add additional concept analysis to file
