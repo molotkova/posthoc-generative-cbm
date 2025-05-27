@@ -468,13 +468,13 @@ def main():
         total_successful = len(all_successful_orig[list(additional_classifiers.keys())[0]])
         
         # Calculate percentage where ANY additional concept changed
-        any_concept_changed = torch.zeros(total_successful, dtype=torch.bool)
+        any_concept_changed = torch.zeros(total_successful, dtype=torch.bool, device=device)
         for concept_idx in additional_classifiers.keys():
             concept_changed = all_successful_orig[concept_idx] != all_successful_interv[concept_idx]
             any_concept_changed = any_concept_changed | concept_changed
         
         any_concept_changed_pct = torch.sum(any_concept_changed).item() / total_successful * 100.0
-        print(f"Successful interventions where ANY additional concept changed: {any_concept_changed_pct:.2f}%")
+        print(f"Successful interventions where ANY additional (provided in --additional-concepts) concept changed: {any_concept_changed_pct:.2f}%")
         
         # Calculate percentage for each individual additional concept
         for concept_idx in additional_classifiers.keys():
