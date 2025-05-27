@@ -185,7 +185,14 @@ def main():
     # Parse additional concepts for evaluation
     additional_concept_indices = []
     if args.additional_concepts:
-        for concept in args.additional_concepts:
+        # Flatten the list in case some arguments contain space-separated concepts
+        all_concepts = []
+        for concept_arg in args.additional_concepts:
+            # Split by spaces to handle "concept1 concept2" format
+            concepts_in_arg = concept_arg.split()
+            all_concepts.extend(concepts_in_arg)
+        
+        for concept in all_concepts:
             try:
                 idx = conc_clsf_classes.index(concept)
                 additional_concept_indices.append(idx)
@@ -288,8 +295,8 @@ def main():
         batch_size = 16
         num_steps = 5
     else:
-        batch_size = 5
-        num_steps = 2000
+        batch_size = 2
+        num_steps = 100
     print(f'saving to {save_image_loc}')
     num_target_concept = 0.0
     num_nottgt_concept = 0.0
