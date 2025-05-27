@@ -75,6 +75,7 @@ def main():
     parser.add_argument("--alpha", default=1.0, type=float, help='1.0 is for full CB-AE latent, 0.0 is for full original latent, and in-between for linear interpolation')
     parser.add_argument("--optint-eps", type=float, default=0.1, help='l-infinity norm bound for optint if used')
     parser.add_argument("--optint-iters", type=int, default=50, help='number of iterations for optint if used')
+    parser.add_argument("--additional-concepts", action='append', help='additional concepts to evaluate for changes during successful interventions')
     args = parser.parse_args()
     args.config_file = f"./config/{args.expt_name}/"+args.dataset+".yaml"
 
@@ -180,6 +181,17 @@ def main():
         ]
 
     args.concept_change = conc_clsf_classes.index(args.classes[0])
+    
+    # Parse additional concepts for evaluation
+    additional_concept_indices = []
+    if args.additional_concepts:
+        for concept in args.additional_concepts:
+            try:
+                idx = conc_clsf_classes.index(concept)
+                additional_concept_indices.append(idx)
+            except ValueError:
+                print(f"Warning: concept '{concept}' not found in concept list, skipping")
+    
     if 'cc' in args.expt_name:
         control_type = 'cc'
         if args.gan_type == 'stylegan2':
@@ -204,12 +216,37 @@ def main():
     else:
         tgt_concept_value = args.concept_value
 
-
     if len(args.classes) == 1:
         save_name = args.classes[0]
         args.classes = [f'not {args.classes[0]}', f'{args.classes[0]}']
     else:
         save_name = args.classes[0].split('_')[-1]
+
+    # Load concept classifiers for additional concepts
+    additional_classifiers = {}
+    for concept_idx in additional_concept_indices:
+        concept_name = conc_clsf_classes[concept_idx]
+        if clsf_model_type == 'rn18':
+            concept_clsf = models.resnet18(weights='DEFAULT')
+            num_features = concept_clsf.fc.in_features
+            concept_clsf.fc = nn.Linear(num_features, 2)  # binary classification
+        elif clsf_model_type == 'rn50':
+            concept_clsf = models.resnet50(weights='DEFAULT')
+            num_features = concept_clsf.fc.in_features
+            concept_clsf.fc = nn.Linear(num_features, 2)
+        elif clsf_model_type == 'vit_l_16':
+            concept_clsf = models.vit_l_16(weights='ViT_L_16_Weights.IMAGENET1K_SWAG_E2E_V1')
+            num_features = concept_clsf.heads.head.in_features
+            concept_clsf.heads = nn.Linear(num_features, 2)
+        
+        try:
+            concept_clsf.load_state_dict(torch.load(f'models/checkpoints/{args.dataset}_{concept_name}_{clsf_model_type}_conclsf.pth', map_location='cpu'))
+            concept_clsf = concept_clsf.to(device)
+            concept_clsf.eval()
+            additional_classifiers[concept_idx] = concept_clsf
+            print(f'Loaded additional concept classifier for {concept_name}')
+        except FileNotFoundError:
+            print(f"Warning: classifier for concept '{concept_name}' not found, skipping")
 
     if clsf_model_type == 'rn18':
         con_clsf = models.resnet18(weights='DEFAULT')
@@ -260,6 +297,10 @@ def main():
     num_unsucc_interv = 0.0
     num_tgtconc_stays_same = 0.0
     num_negative_interv = 0.0
+    
+    # Additional concept tracking
+    successful_interventions_data = []  # Store data for successful interventions
+    
     for idx in tqdm(range(num_steps)):
         # intervene on one selected concept with selected value
         concept_change = args.concept_change
@@ -337,24 +378,41 @@ def main():
         interv_pred = con_clsf(gen_imgs_latent_cc).argmax(dim=1)
         recon_pred = con_clsf(gen_imgs_latent_orig_cc).argmax(dim=1)
 
+        # Evaluate additional concepts if provided
+        additional_concept_preds_orig = {}
+        additional_concept_preds_interv = {}
+        
+        for concept_idx, classifier in additional_classifiers.items():
+            orig_pred = classifier(gen_imgs_latent_orig_cc).argmax(dim=1)
+            interv_pred_concept = classifier(gen_imgs_latent_cc).argmax(dim=1)
+            additional_concept_preds_orig[concept_idx] = orig_pred
+            additional_concept_preds_interv[concept_idx] = interv_pred_concept
+
         # binary concepts
         if len(set_of_classes[args.concept_change]) == 2:
             curr_tgt_concept = torch.sum(recon_pred == tgt_concept_value)
             num_target_concept += curr_tgt_concept
             num_nottgt_concept += (batch_size - curr_tgt_concept)
 
-            # let tgt concept = male, then not_tgt_conc = female
+            # Identify successful interventions
+            successful_mask = torch.logical_and((interv_pred != recon_pred), (interv_pred == tgt_concept_value))
+            
+            # Store data for successful interventions
+            if torch.sum(successful_mask) > 0:
+                batch_data = {
+                    'main_concept_orig': recon_pred[successful_mask],
+                    'main_concept_interv': interv_pred[successful_mask],
+                    'additional_concepts_orig': {},
+                    'additional_concepts_interv': {}
+                }
+                for concept_idx in additional_classifiers.keys():
+                    batch_data['additional_concepts_orig'][concept_idx] = additional_concept_preds_orig[concept_idx][successful_mask]
+                    batch_data['additional_concepts_interv'][concept_idx] = additional_concept_preds_interv[concept_idx][successful_mask]
+                successful_interventions_data.append(batch_data)
 
-            # if orig pred is female, interv pred is male
-            num_succ_interv += torch.sum(torch.logical_and((interv_pred != recon_pred), (interv_pred == tgt_concept_value)))
-
-            # if orig pred is female, interv pred is female
+            num_succ_interv += torch.sum(successful_mask)
             num_unsucc_interv += torch.sum(torch.logical_and((interv_pred == recon_pred), (recon_pred == not_tgt_concept_value)))
-
-            # if orig pred is male, interv pred is male
             num_tgtconc_stays_same += torch.sum(torch.logical_and((interv_pred == recon_pred), (recon_pred == tgt_concept_value)))
-
-            # if orig pred is male, interv pred is female
             num_negative_interv += torch.sum(torch.logical_and((interv_pred != recon_pred), (interv_pred == not_tgt_concept_value)))
         # categorical concepts
         else:
@@ -362,18 +420,25 @@ def main():
             num_target_concept += curr_tgt_concept
             num_nottgt_concept += (batch_size - curr_tgt_concept)
 
-            # let tgt concept = male, then not_tgt_conc = female
+            # Identify successful interventions
+            successful_mask = torch.logical_and((recon_pred != tgt_concept_value), (interv_pred == tgt_concept_value))
+            
+            # Store data for successful interventions
+            if torch.sum(successful_mask) > 0:
+                batch_data = {
+                    'main_concept_orig': recon_pred[successful_mask],
+                    'main_concept_interv': interv_pred[successful_mask],
+                    'additional_concepts_orig': {},
+                    'additional_concepts_interv': {}
+                }
+                for concept_idx in additional_classifiers.keys():
+                    batch_data['additional_concepts_orig'][concept_idx] = additional_concept_preds_orig[concept_idx][successful_mask]
+                    batch_data['additional_concepts_interv'][concept_idx] = additional_concept_preds_interv[concept_idx][successful_mask]
+                successful_interventions_data.append(batch_data)
 
-            # if orig pred is female, interv pred is male
-            num_succ_interv += torch.sum(torch.logical_and((recon_pred != tgt_concept_value), (interv_pred == tgt_concept_value)))
-
-            # if orig pred is female, interv pred is female
+            num_succ_interv += torch.sum(successful_mask)
             num_unsucc_interv += torch.sum(torch.logical_and((interv_pred != tgt_concept_value), (recon_pred != tgt_concept_value)))
-
-            # if orig pred is male, interv pred is male
             num_tgtconc_stays_same += torch.sum(torch.logical_and((interv_pred == tgt_concept_value), (recon_pred == tgt_concept_value)))
-
-            # if orig pred is male, interv pred is female
             num_negative_interv += torch.sum(torch.logical_and((recon_pred == tgt_concept_value), (interv_pred != tgt_concept_value)))
 
         if idx < 5:
@@ -388,6 +453,35 @@ def main():
             else:
                 print(f'not saving images since no original images with opposite of desired concept in iteration {idx}')
 
+    # Analyze additional concept changes in successful interventions
+    if successful_interventions_data and additional_classifiers:
+        print("\n=== Additional Concept Analysis ===")
+        
+        # Combine all successful intervention data
+        all_successful_orig = {}
+        all_successful_interv = {}
+        
+        for concept_idx in additional_classifiers.keys():
+            all_successful_orig[concept_idx] = torch.cat([batch['additional_concepts_orig'][concept_idx] for batch in successful_interventions_data])
+            all_successful_interv[concept_idx] = torch.cat([batch['additional_concepts_interv'][concept_idx] for batch in successful_interventions_data])
+        
+        total_successful = len(all_successful_orig[list(additional_classifiers.keys())[0]])
+        
+        # Calculate percentage where ANY additional concept changed
+        any_concept_changed = torch.zeros(total_successful, dtype=torch.bool)
+        for concept_idx in additional_classifiers.keys():
+            concept_changed = all_successful_orig[concept_idx] != all_successful_interv[concept_idx]
+            any_concept_changed = any_concept_changed | concept_changed
+        
+        any_concept_changed_pct = torch.sum(any_concept_changed).item() / total_successful * 100.0
+        print(f"Successful interventions where ANY additional concept changed: {any_concept_changed_pct:.2f}%")
+        
+        # Calculate percentage for each individual additional concept
+        for concept_idx in additional_classifiers.keys():
+            concept_name = conc_clsf_classes[concept_idx]
+            concept_changed = all_successful_orig[concept_idx] != all_successful_interv[concept_idx]
+            concept_changed_pct = torch.sum(concept_changed).item() / total_successful * 100.0
+            print(f"Successful interventions where '{concept_name}' changed: {concept_changed_pct:.2f}%")
 
     if args.visualize:
         print('check classifier type before using below success rate (steerability) results, this experiment was only for visualization')
@@ -418,6 +512,16 @@ def main():
         savefile_name = f'results/{quant_folder_name}/{args.dataset}_{args.expt_name}_{args.tensorboard_name}_optint_eps{args.optint_eps}_iters{args.optint_iters}.txt'
     with open(savefile_name, 'a') as f:
         f.write(f'{set_of_classes[args.concept_change][args.concept_value]:<20} | {num_succ_interv * 100.0:.2f} | {num_negative_interv * 100.0:.2f}\n')
+        
+        # Add additional concept analysis to file
+        if successful_interventions_data and additional_classifiers:
+            f.write("=== Additional Concept Changes in Successful Interventions ===\n")
+            f.write(f"Any additional concept changed: {any_concept_changed_pct:.2f}%\n")
+            for concept_idx in additional_classifiers.keys():
+                concept_name = conc_clsf_classes[concept_idx]
+                concept_changed = all_successful_orig[concept_idx] != all_successful_interv[concept_idx]
+                concept_changed_pct = torch.sum(concept_changed).item() / total_successful * 100.0
+                f.write(f"{concept_name} changed: {concept_changed_pct:.2f}%\n")
 
 if __name__ == '__main__':
     main()
