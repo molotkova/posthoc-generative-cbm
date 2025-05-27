@@ -15,5 +15,5 @@ __pycache__/
 .pytest_cache
 .ipynb_checkpoints
 .cache/
-
+*.code-workspace
 wandb/
