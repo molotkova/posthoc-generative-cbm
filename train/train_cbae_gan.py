@@ -137,7 +137,7 @@ def main():
         print(f'loading pretrained CB-AE checkpoint from models/checkpoints/{args.pretrained_load_name}')
         model.cbae.load_state_dict(torch.load(f'models/checkpoints/{args.pretrained_load_name}'))
 
-    if args.dataset == 'celebahq':
+    if args.dataset == 'celebahq' and len(config["model"]["concepts"]["concept_names"]) == 9:  # 8 concepts + 1 unknown
         set_of_classes = [
             ['NOT Attractive', 'Attractive'],
             ['NO Lipstick', 'Wearing Lipstick'],
@@ -147,6 +147,50 @@ def main():
             ['NO Makeup', 'Heavy Makeup'],
             ['Female', 'Male'],
             ['Straight Eyebrows', 'Arched Eyebrows']
+        ]
+        clsf_model_type = 'rn18'
+    elif args.dataset == 'celebahq' and len(config["model"]["concepts"]["concept_names"]) == 41:  # 40 concepts + 1 unknown
+        set_of_classes = [
+            ['NO 5 o Clock Shadow', '5 o Clock Shadow'],
+            ['Straight Eyebrows', 'Arched Eyebrows'],
+            ['NOT Attractive', 'Attractive'],
+            ['NO Bags Under Eyes', 'Bags Under Eyes'],
+            ['NOT Bald', 'Bald'],
+            ['NO Bangs', 'Bangs'],
+            ['Small Lips', 'Big Lips'],
+            ['Small Nose', 'Big Nose'],
+            ['NOT Black Hair', 'Black Hair'],
+            ['NOT Blond Hair', 'Blond Hair'],
+            ['NOT Blurry', 'Blurry'],
+            ['NOT Brown Hair', 'Brown Hair'],
+            ['Thin Eyebrows', 'Bushy Eyebrows'],
+            ['NOT Chubby', 'Chubby'],
+            ['NO Double Chin', 'Double Chin'],
+            ['NO Eyeglasses', 'Eyeglasses'],
+            ['NO Goatee', 'Goatee'],
+            ['NOT Gray Hair', 'Gray Hair'],
+            ['NO Makeup', 'Heavy Makeup'],
+            ['Low Cheekbones', 'High Cheekbones'],
+            ['Female', 'Male'],
+            ['Mouth Closed', 'Mouth Slightly Open'],
+            ['NO Mustache', 'Mustache'],
+            ['Wide Eyes', 'Narrow Eyes'],
+            ['Has Beard', 'No Beard'],
+            ['NOT Oval Face', 'Oval Face'],
+            ['NOT Pale Skin', 'Pale Skin'],
+            ['NOT Pointy Nose', 'Pointy Nose'],
+            ['NO Receding Hairline', 'Receding Hairline'],
+            ['NO Rosy Cheeks', 'Rosy Cheeks'],
+            ['NO Sideburns', 'Sideburns'],
+            ['NOT Smiling', 'Smiling'],
+            ['NOT Straight Hair', 'Straight Hair'],
+            ['NOT Wavy Hair', 'Wavy Hair'],
+            ['NO Earrings', 'Wearing Earrings'],
+            ['NO Hat', 'Wearing Hat'],
+            ['NO Lipstick', 'Wearing Lipstick'],
+            ['NO Necklace', 'Wearing Necklace'],
+            ['NO Necktie', 'Wearing Necktie'],
+            ['NOT Young', 'Young']
         ]
         clsf_model_type = 'rn18'
     elif args.dataset == 'cub' or args.dataset == 'cub64':
@@ -289,14 +333,15 @@ def main():
             # to make it from -1 to 1 range to 0 to 1
             intervened_gen_imgs = intervened_gen_imgs.mul(0.5).add_(0.5)
 
-            recon_intervened_concepts = model.cbae.enc(intervened_latent)
+            recon_intervened_concepts = model.cbae.enc(intervened_latent)  # encoder extracts concepts from intervened images
 
-            pred_logits = clip_zs.get_soft_pseudo_labels(intervened_gen_imgs)
+            pred_logits = clip_zs.get_soft_pseudo_labels(intervened_gen_imgs)  # extract concepts from generated images with interventions
 
             intervened_pseudo_label_loss = 0
-            for curr_logits, actual_pl in zip(pred_logits, intervened_pseudo_label):
+            for curr_logits, actual_pl in zip(pred_logits, intervened_pseudo_label):  # L_{i1}
                 intervened_pseudo_label_loss += ce_loss(curr_logits, actual_pl)
-
+            
+            # L_{i2}
             intervened_concept_loss, _ = get_pseudo_concept_loss(model, recon_intervened_concepts, intervened_pseudo_label, None, use_pl_thresh=False, device=device, dataset=args.dataset)
 
             total_intervened_loss = intervened_concept_loss + intervened_pseudo_label_loss
