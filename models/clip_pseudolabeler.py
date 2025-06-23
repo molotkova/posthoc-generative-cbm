@@ -147,7 +147,7 @@ class Sup_PseudoLabeler(nn.Module):
                 conc_save_name = cls_list[-1].replace(' ', '_')
             else:
                 conc_save_name = cls_list[0].replace(' ', '_')
-            curr_model.load_state_dict(torch.load(f'models/checkpoints/{self.dataset}_{conc_save_name}_{self.model_type}_conclsf.pth'))
+            curr_model.load_state_dict(torch.load(f'models/checkpoints/{self.dataset}_{conc_save_name}_{self.model_type}_conclsf_mine.pth'))
             if device is not None:
                 curr_model = curr_model.to(device)
 
