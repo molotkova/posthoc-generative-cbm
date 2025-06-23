@@ -19,6 +19,7 @@ import itertools
 import warnings
 import pickle
 from torch.utils.tensorboard import SummaryWriter
+import wandb
 
 # warnings.filterwarnings("ignore", category=UserWarning)
 import time
@@ -91,6 +92,26 @@ def main():
     parser.add_argument("--pretrained-load-name", type=str, default='', help='filename to load from models/checkpoints/')
     args = parser.parse_args()
     args.config_file = f"./config/{args.expt_name}/"+args.dataset+".yaml"
+
+    # Initialize wandb
+    wandb.init(
+        entity="personal-12",
+        project="posthoc-generative-cbm",
+        name=f"{args.dataset}_{args.expt_name}_{args.tensorboard_name}",
+        config={
+            "dataset": args.dataset,
+            "expt_name": args.expt_name,
+            "pseudo_label": args.pseudo_label,
+            "batch_size": config["dataset"]["batch_size"],
+            "n_concepts": len(config["model"]["concepts"]["concept_names"]),
+            "n_epochs": config["train_config"]["epochs"],
+            "recon_lr": config["train_config"]["recon_lr"],
+            "conc_lr": config["train_config"]["conc_lr"],
+            "betas": config["train_config"]["betas"],
+            "pl_prob_thresh": config["train_config"]["pl_prob_thresh"],
+            "steps_per_epoch": config["train_config"]["steps_per_epoch"],
+        }
+    )
 
     writer = SummaryWriter(f'results/{args.dataset}_{args.expt_name}_{args.tensorboard_name}')
 
@@ -240,6 +261,16 @@ def main():
 
     steps_per_epoch = config["train_config"]["steps_per_epoch"]
     batch_size = config["dataset"]["batch_size"]
+    
+    # initialize loss tracking variables for wandb logging
+    recon_losses = []
+    img_recon_losses = []
+    concept_losses = []
+    recon_concept_align_losses = []
+    intervened_concept_losses = []
+    intervened_pseudo_label_losses = []
+    total_intervened_losses = []
+    
     for epoch in range(config["train_config"]["epochs"]):
         model.train()
         start = time.time()
@@ -294,6 +325,12 @@ def main():
                 loss = recon_loss + img_recon_loss
             else:
                 loss = recon_loss + img_recon_loss + concept_loss
+
+            # Track losses for wandb logging
+            recon_losses.append(recon_loss.item())
+            img_recon_losses.append(img_recon_loss.item())
+            concept_losses.append(concept_loss.item())  # Store all values, including NaN
+            recon_concept_align_losses.append(loss.item())
 
             loss.backward()
             opt.step()
@@ -351,6 +388,11 @@ def main():
 
             total_intervened_loss = intervened_concept_loss + intervened_pseudo_label_loss
 
+            # Track intervention losses for wandb logging
+            intervened_concept_losses.append(intervened_concept_loss.item())
+            intervened_pseudo_label_losses.append(intervened_pseudo_label_loss.item())
+            total_intervened_losses.append(total_intervened_loss.item())
+
             total_intervened_loss.backward()
             opt_interv.step()
 
@@ -358,6 +400,28 @@ def main():
             # Log Progress
             # --------------
             batches_done = epoch * steps_per_epoch + i
+            
+            # Log to wandb every 100 steps
+            if batches_done % 100 == 0 and batches_done > 0:
+                recent_recon_losses = recon_losses[-100:]
+                recent_img_recon_losses = img_recon_losses[-100:]
+                recent_concept_losses = [x for x in concept_losses[-100:] if not np.isnan(x)]  # requires NaN checking for concept loss
+                recent_recon_concept_align_losses = recon_concept_align_losses[-100:]
+                recent_intervened_concept_losses = intervened_concept_losses[-100:]
+                recent_intervened_pseudo_label_losses = intervened_pseudo_label_losses[-100:]
+                recent_total_intervened_losses = total_intervened_losses[-100:]
+                
+                # Log individual losses with batches_done as x-axis
+                wandb.log({
+                    "recon_loss": np.mean(recent_recon_losses),
+                    "img_recon_loss": np.mean(recent_img_recon_losses),
+                    "concept_loss": np.mean(recent_concept_losses) if recent_concept_losses else 0,
+                    "recon_and_concept_align_loss": np.mean(recent_recon_concept_align_losses),
+                    "intervened_concept_loss": np.mean(recent_intervened_concept_losses),
+                    "intervened_pseudo_label_loss": np.mean(recent_intervened_pseudo_label_losses),
+                    "intervention_loss": np.mean(recent_total_intervened_losses),
+                }, step=batches_done)
+            
             if batches_done % config["train_config"]["log_interval"] == 0:
                 print(
                     "Model %s Dataset %s [Epoch %d/%d] [Batch %d/%d] [total loss: %.4f] [conc: %.4f] [avg lat rec: %.4f] [avg img rec: %.4f] [tot int loss: %.4f]"
@@ -387,6 +451,8 @@ def main():
         print("epoch time", end - start)
         print()
 
+    # Finish wandb run
+    wandb.finish()
 
 if __name__ == '__main__':
     main()
