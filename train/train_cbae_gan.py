@@ -101,8 +101,10 @@ def main():
     use_cuda =  config["train_config"]["use_cuda"] and  torch.cuda.is_available()
     if use_cuda:
         device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
     else:
-        device= torch.device("cpu")
+        device = torch.device("cpu")
 
     ignore_index = 250
 
@@ -124,6 +126,9 @@ def main():
     if (torch.cuda.is_available() and config["train_config"]["use_cuda"]):
         use_cuda=True
         device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        use_cuda=False
+        device = torch.device("mps")
     else:
         use_cuda=False
         device = torch.device("cpu")
