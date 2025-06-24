@@ -10,3 +10,4 @@ ipywidgets
 diffusers
 accelerate==0.15.0
 gdown
+wandb
