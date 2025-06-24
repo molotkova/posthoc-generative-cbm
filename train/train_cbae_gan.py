@@ -93,6 +93,12 @@ def main():
     args = parser.parse_args()
     args.config_file = f"./config/{args.expt_name}/"+args.dataset+".yaml"
 
+    writer = SummaryWriter(f'results/{args.dataset}_{args.expt_name}_{args.tensorboard_name}')
+
+    with open(args.config_file, 'r') as stream:
+        config = yaml.safe_load(stream)
+    print(f"Loaded configuration file {args.config_file}")
+
     # Initialize wandb
     wandb.init(
         entity="personal-12",
@@ -113,18 +119,14 @@ def main():
         }
     )
 
-    writer = SummaryWriter(f'results/{args.dataset}_{args.expt_name}_{args.tensorboard_name}')
-
-    with open(args.config_file, 'r') as stream:
-        config = yaml.safe_load(stream)
-    print(f"Loaded configuration file {args.config_file}")
-
-    use_cuda =  config["train_config"]["use_cuda"] and  torch.cuda.is_available()
-    if use_cuda:
+    if (torch.cuda.is_available() and config["train_config"]["use_cuda"]):
+        use_cuda=True
         device = torch.device("cuda")
     elif torch.backends.mps.is_available():
+        use_cuda=False
         device = torch.device("mps")
     else:
+        use_cuda=False
         device = torch.device("cpu")
 
     ignore_index = 250
@@ -143,16 +145,6 @@ def main():
 
     model_type = config["model"]["type"]
     dataset = config["dataset"]["name"]
-
-    if (torch.cuda.is_available() and config["train_config"]["use_cuda"]):
-        use_cuda=True
-        device = torch.device("cuda")
-    elif torch.backends.mps.is_available():
-        use_cuda=False
-        device = torch.device("mps")
-    else:
-        use_cuda=False
-        device = torch.device("cpu")
 
     # Pretrained weights are already loaded for stylegan2 through config file
     model = cbae_stygan2.cbAE_StyGAN2(config)
@@ -271,6 +263,7 @@ def main():
     intervened_pseudo_label_losses = []
     total_intervened_losses = []
     
+    print("Starting training")
     for epoch in range(config["train_config"]["epochs"]):
         model.train()
         start = time.time()
