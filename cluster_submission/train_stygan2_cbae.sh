@@ -33,6 +33,6 @@ pwd=$(pwd)
 
 export HOME="$(pwd)"
 export PYTHONPATH="${path}"
-export WANDB_API_KEY="46377815ea349348f24386c0730d943f2da31f72"
+export WANDB_API_KEY=""
 
 ./scripts/train_cbae.sh
