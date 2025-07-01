@@ -12,7 +12,7 @@ requirements = ((UidDomain == "cs.uni-saarland.de") &&  (GPUs_GlobalMemoryMb >= 
 
 request_GPUs = 1
 request_CPUs = 8
-request_memory = 32G
+request_memory = 16G
 executable = train_stygan2_cbae.sh
 
 output = logs_cluster/$(Clusterid).$(ProcId).out
