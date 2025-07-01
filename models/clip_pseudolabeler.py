@@ -173,7 +173,7 @@ class Sup_PseudoLabeler(nn.Module):
     def get_pseudo_labels(self, image, return_prob=False):
         if self.model_type == 'vit_l_16':
             tf_input = F.interpolate(image, size=512, mode='bicubic', align_corners=False)
-        elif self.dataset == 'celebahq' or self.dataset == 'cub':
+        elif self.dataset == 'celebahq' or self.dataset == 'celebahq40' or self.dataset == 'cub':
             tf_input = F.interpolate(image, size=256, mode='bicubic', align_corners=False)
         elif self.dataset == 'celeba64' or self.dataset == 'cub64':
             tf_input = F.interpolate(image, size=64, mode='bicubic', align_corners=False)

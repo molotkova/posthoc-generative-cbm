@@ -56,7 +56,7 @@ def eval_classifier(model, save_image_loc, num_samples=64, dataset='celebahq', d
 def get_pseudo_concept_loss(model, predicted_concepts, pseudolabel_concepts, pseudolabel_probs, device, pl_prob_thresh=0.1, dataset='color_mnist', ignore_index=250, use_pl_thresh=True):
     concept_loss = 0
     batch_size = predicted_concepts.shape[0]
-    if dataset == 'celebahq' or dataset == 'cub' or dataset == 'cub64':
+    if dataset == 'celebahq' or dataset == 'celebahq40' or dataset == 'cub' or dataset == 'cub64':
         ### classification with CUB is more difficult and probability values are more varied, so we don't use the threshold
         ### using the threshold leads to lot of nans because some batches don't have enough samples over the threshold
         if dataset == 'cub' or dataset == 'cub64':
@@ -155,7 +155,7 @@ def main():
         print(f'loading pretrained CB-AE checkpoint from models/checkpoints/{args.pretrained_load_name}')
         model.cbae.load_state_dict(torch.load(f'models/checkpoints/{args.pretrained_load_name}'))
 
-    if args.dataset == 'celebahq' and len(config["model"]["concepts"]["concept_names"]) == 9:  # 8 concepts + 1 unknown
+    if args.dataset == 'celebahq':
         set_of_classes = [
             ['NOT Attractive', 'Attractive'],
             ['NO Lipstick', 'Wearing Lipstick'],
@@ -167,7 +167,7 @@ def main():
             ['Straight Eyebrows', 'Arched Eyebrows']
         ]
         clsf_model_type = 'rn18'
-    elif args.dataset == 'celebahq' and len(config["model"]["concepts"]["concept_names"]) == 41:  # 40 concepts + 1 unknown
+    elif args.dataset == 'celebahq40':
         set_of_classes = [
             ['NO 5 o Clock Shadow', '5 o Clock Shadow'],
             ['Straight Eyebrows', 'Arched Eyebrows'],
