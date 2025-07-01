@@ -3,7 +3,7 @@ dataset:
   transforms_1: (0.5)
   transforms_2: (0.5)
   img_size: 256
-  batch_size: 64
+  batch_size: 32
   test_batch_size: 100
   num_channels: 3
 model:
