@@ -1,0 +1,115 @@
+dataset:
+  name: celebahq
+  transforms_1: (0.5)
+  transforms_2: (0.5)
+  img_size: 256
+  batch_size: 32
+  test_batch_size: 100
+  num_channels: 3
+model:
+  pretrained: models/checkpoints/stylegan2-celebahq-256x256.pkl
+  type: cb_cvae_stygan2
+  latent_noise_dim: 512
+  input_latent_dim: 10
+  has_concepts: True
+  # the mapping network outputs (batch_size, 14, 512) sized latents, where 512-vector is repeated 14 times
+  num_ws: 14
+  concepts: 
+      concept_bins: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+      #concept_bins: [2, 2, 2, 2, 2, 2, 2, 2]
+      #concept_names: ["attractive", "lipstick", "mouth-closed", "smiling", "cheekbones", "makeup", "gender", "eyebrows"]
+      #concept_names: ['Male', 'Wearing_Lipstick', 'Heavy_Makeup', 'No_Beard', 'Attractive', 'Big_Nose', 'Arched_Eyebrows', 'Young', 'Goatee', 'Wavy_Hair']
+      #concept_names: ['Narrow_Eyes', 'Pale_Skin', 'Blurry', 'Straight_Hair', 'Black_Hair', 'Big_Lips', 'Wearing_Hat', 'Bangs', 'Brown_Hair', 'Mouth_Slightly_Open']
+      #concept_names: ['Male', 'Smiling', 'Blond_Hair', 'Eyeglasses', 'Mustache', 'Pale_Skin', 'Young', 'Wearing_Hat', 'Straight_Hair', 'Bangs']
+      concept_names: ['5_o_Clock_Shadow', 'Arched_Eyebrows', 'Attractive', 'Bags_Under_Eyes', 'Bald', 'Bangs', 'Big_Lips', 'Big_Nose', 'Black_Hair', 'Blond_Hair', 'Blurry', 'Brown_Hair', 'Bushy_Eyebrows', 'Chubby', 'Double_Chin', 'Eyeglasses', 'Goatee', 'Gray_Hair', 'Heavy_Makeup', 'High_Cheekbones', 'Male', 'Mouth_Slightly_Open', 'Mustache', 'Narrow_Eyes', 'No_Beard', 'Oval_Face', 'Pale_Skin', 'Pointy_Nose', 'Receding_Hairline', 'Rosy_Cheeks', 'Sideburns', 'Smiling', 'Straight_Hair', 'Wavy_Hair', 'Wearing_Earrings', 'Wearing_Hat', 'Wearing_Lipstick', 'Wearing_Necklace', 'Wearing_Necktie', 'Young']
+      #concept_names: ['Attractive', 'Wearing_Lipstick', 'Mouth_Slightly_Open', 'Smiling', 'High_Cheekbones', 'Heavy_Makeup', 'Male', 'Arched_Eyebrows']
+      emb_size: 16
+      concept_output: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+      #concept_output: [2, 2, 2, 2, 2, 2, 2, 2]
+      types: ["bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin"]
+      #types: ["bin", "bin", "bin", "bin", "bin", "bin", "bin", "bin"]
+      set_of_classes: [ ['NO 5 o Clock Shadow', '5 o Clock Shadow'],
+                        ['Straight Eyebrows', 'Arched Eyebrows'],
+                        ['NOT Attractive', 'Attractive'],
+                        ['NO Bags Under Eyes', 'Bags Under Eyes'],
+                        ['Has Hair', 'Bald'],
+                        ['NO Bangs', 'Bangs'],
+                        ['NOT Big Lips', 'Big Lips'],
+                        ['Normal Nose', 'Big Nose'],
+                        ['NOT Black Hair', 'Black Hair'],
+                        ['NOT Blond Hair', 'Blond Hair'],
+                        ['Sharp', 'Blurry'],
+                        ['NOT Brown Hair', 'Brown Hair'],
+                        ['NOT Bushy Eyebrows', 'Bushy Eyebrows'],
+                        ['Thin', 'Chubby'],
+                        ['NO Double Chin', 'Double Chin'],
+                        ['NO Eyeglasses', 'Eyeglasses'],
+                        ['WITHOUT Goatee', 'Goatee'],
+                        ['NO Gray Hair', 'Gray Hair'],
+                        ['WITHOUT Heavy Makeup', 'Heavy Makeup'],
+                        ['Low Cheekbones', 'High Cheekbones'],
+                        ['Female', 'Male'],
+                        ['Mouth Closed', 'Mouth Slightly Open'],
+                        ['Clean-Shaved', 'Mustache'],
+                        ['Wide Eyes', 'Narrow Eyes'],
+                        ['Full Beard', 'No Beard'],
+                        ['WITHOUT Oval Face', 'Oval Face'],
+                        ['NOT Pale Skin', 'Pale Skin'],
+                        ['NOT Pointy Nose', 'Pointy Nose'],
+                        ['NO Receding Hairline', 'Receding Hairline'],
+                        ['NO Rosy Cheeks', 'Rosy Cheeks'],
+                        ['Trimmed WITHOUT Sideburns', 'Sideburns'],
+                        ['NOT Smiling', 'Smiling'],
+                        ['NOT Straight Hair', 'Straight Hair'],
+                        ['NOT Wavy Hair', 'Wavy Hair'],
+                        ['NO Earrings', 'Wearing Earrings'],
+                        ['NO Hat', 'Wearing Hat'],
+                        ['NOT Wearing Lipstick', 'Wearing Lipstick'],
+                        ['NOT Wearing Necklace', 'Wearing Necklace'],
+                        ['WITHOUT Necktie', 'Wearing Necktie'],
+                        ['Old', 'Young']
+                    ]
+
+  beta: 15
+  concept_inf: 'rep'   # 'rep' (repetition codes) or 'uncoded'
+  sc_type: 'binary'         # If None, we do not include a side channel
+  sc_inf: 'rep'          # If binary, indicate 'rep' or 'uncoded'. If sc_type='continuous' or sc_type=None, this will be ignored (can be None)
+  sc_dim: 5                 # If sc_type=None, this will be ignored (can be None)
+
+  concept_code:
+    bits_info: 40
+    bits_code: 800
+    root: './repetition_codes/'
+    file: 'default'   # This will be ignored if concept_inf_type='uncoded'.
+
+  # This will be ignored if sc_type='continuous', sc_type=None. Bits of info are already specified in sc_dim
+  sc_code:
+    bits_info: 5
+    bits_code: 50
+    root: './repetition_codes/'
+    file: 'default'   # This will be ignored if concept_inf_type='uncoded'.
+
+train_config:
+  epochs: 50 
+  recon_lr: 0.0002
+  conc_lr: 0.0002
+  betas: (.5, .99)
+  save_model: True
+  use_cuda: True
+  log_interval: 100
+  steps_per_epoch: 1000
+  plot_loss: True
+  beta_concepts: 20.
+evaluation:
+  generation: True
+  save_images: True
+  save_concept_image: True
+  save_results: True
+  concepts_to_intervene: ['Male', 'Smiling', 'Blond_Hair', 'Eyeglasses', 'Mustache', 'Pale_Skin', 'Young', 'Wearing_Hat', 'Straight_Hair', 'Bangs']
+  #concepts_to_intervene: ['5_o_Clock_Shadow', 'Arched_Eyebrows', 'Attractive', 'Bags_Under_Eyes', 'Bald', 'Bangs', 'Big_Lips', 'Big_Nose', 'Black_Hair', 'Blond_Hair', 'Blurry', 'Brown_Hair', 'Bushy_Eyebrows', 'Chubby', 'Double_Chin', 'Eyeglasses', 'Goatee', 'Gray_Hair', 'Heavy_Makeup', 'High_Cheekbones', 'Male', 'Mouth_Slightly_Open', 'Mustache', 'Narrow_Eyes', 'No_Beard', 'Oval_Face', 'Pale_Skin', 'Pointy_Nose', 'Receding_Hairline', 'Rosy_Cheeks', 'Sideburns', 'Smiling', 'Straight_Hair', 'Wavy_Hair', 'Wearing_Earrings', 'Wearing_Hat', 'Wearing_Lipstick', 'Wearing_Necklace', 'Wearing_Necktie', 'Young']
+  #concepts_to_intervene: ['Attractive', 'Wearing_Lipstick', 'Mouth_Slightly_Open', 'Smiling', 'High_Cheekbones', 'Heavy_Makeup', 'Male', 'Arched_Eyebrows']
+  #concepts_to_intervene: ['Smiling']
+log:
+  wandb: True
+  wandb_project: 'coded_cbgm'
+  wandb_user: 'mariamartinezga'
