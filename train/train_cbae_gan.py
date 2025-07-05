@@ -91,10 +91,29 @@ def main():
     parser.add_argument("-s", "--save-postfix", type=str, default='', help='postfix to add to saved model filename')
     parser.add_argument("--load-pretrained", action='store_true', default=False, help='whether to load pretrained CB-AE checkpoint from models/checkpoints/.')
     parser.add_argument("--pretrained-load-name", type=str, default='', help='filename to load from models/checkpoints/')
+    parser.add_argument("--out-dir", type=str, default=None, help='output directory for saving results')
     args = parser.parse_args()
     args.config_file = f"./config/{args.expt_name}/"+args.dataset+".yaml"
 
-    writer = SummaryWriter(f'results/{args.dataset}_{args.expt_name}_{args.tensorboard_name}')
+    # Set up output directories based on --out-dir parameter
+    if args.out_dir is not None:
+        images_base = os.path.join(args.out_dir, "images")
+        checkpoints_base = os.path.join(args.out_dir, "models", "checkpoints")
+        results_base = os.path.join(args.out_dir, "results")
+        generation_checkpoints_base = os.path.join(args.out_dir, "generation_checkpoints")
+        
+        os.makedirs(images_base, exist_ok=True)
+        os.makedirs(checkpoints_base, exist_ok=True)
+        os.makedirs(results_base, exist_ok=True)
+        os.makedirs(generation_checkpoints_base, exist_ok=True)
+        
+    else:
+        images_base = "images"
+        checkpoints_base = "models/checkpoints"
+        results_base = "results"
+        generation_checkpoints_base = "generation_checkpoints"
+
+    writer = SummaryWriter(os.path.join(results_base, f'{args.dataset}_{args.expt_name}_{args.tensorboard_name}'))
 
     with open(args.config_file, 'r') as stream:
         config = yaml.safe_load(stream)
@@ -136,13 +155,13 @@ def main():
         save_model_name =  f"{config['dataset']['name']}_{args.expt_name}_{args.tensorboard_name}_{args.save_postfix}"
 
     if config["evaluation"]["save_images"] or config["evaluation"]["save_concept_image"]:
-        os.makedirs("generation_checkpoints/", exist_ok=True)
-        os.makedirs("images/", exist_ok=True)
-        os.makedirs(f"images/{args.expt_name}_{args.tensorboard_name}/", exist_ok=True)
-        os.makedirs(f"images/{args.expt_name}_{args.tensorboard_name}/"+config["dataset"]["name"]+"/", exist_ok=True)
+        os.makedirs(generation_checkpoints_base, exist_ok=True)
+        os.makedirs(images_base, exist_ok=True)
+        os.makedirs(os.path.join(images_base, f"{args.expt_name}_{args.tensorboard_name}"), exist_ok=True)
+        os.makedirs(os.path.join(images_base, f"{args.expt_name}_{args.tensorboard_name}", config["dataset"]["name"]), exist_ok=True)
     if config["evaluation"]["save_images"]:
-        os.makedirs(f"images/{args.expt_name}_{args.tensorboard_name}/"+config["dataset"]["name"]+"/random/", exist_ok=True)
-        save_image_loc = f"images/{args.expt_name}_{args.tensorboard_name}/"+config["dataset"]["name"]+"/random/"
+        os.makedirs(os.path.join(images_base, f"{args.expt_name}_{args.tensorboard_name}", config["dataset"]["name"], "random"), exist_ok=True)
+        save_image_loc = os.path.join(images_base, f"{args.expt_name}_{args.tensorboard_name}", config["dataset"]["name"], "random")
 
     model_type = config["model"]["type"]
     dataset = config["dataset"]["name"]
@@ -439,7 +458,7 @@ def main():
             save_image(intervened_gen_imgs.data, save_image_loc+"%d_interv.png" % epoch, nrow=8, normalize=True)
 
         if config["train_config"]["save_model"]:
-            torch.save(model.cbae.state_dict(), "models/checkpoints/"+save_model_name+"_cbae.pt")
+            torch.save(model.cbae.state_dict(), os.path.join(checkpoints_base, save_model_name+"_cbae.pt"))
 
         end = time.time()
         print("epoch time", end - start)
