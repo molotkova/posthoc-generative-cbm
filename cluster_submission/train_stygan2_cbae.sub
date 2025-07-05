@@ -7,7 +7,7 @@ when_to_transfer_output = ON_EXIT
 transfer_input_files =  train_stygan2_cbae.sh
 transfer_output_files =  /home/somo0003/posthoc-generative-cbm/images
 
-requirements = ((UidDomain == "cs.uni-saarland.de") &&  (GPUs_GlobalMemoryMb >= 30000))  && (GPUs_GlobalMemoryMb < 33000)
+requirements = ((UidDomain == "cs.uni-saarland.de") &&  (GPUs_GlobalMemoryMb >= 30000))
 +WantGPUHomeMounted = true
 
 request_GPUs = 1
