@@ -282,6 +282,7 @@ def main():
     intervened_concept_losses = []
     intervened_pseudo_label_losses = []
     total_intervened_losses = []
+    pseudo_label_low_confidence_ratios = []  # Track ratio of low-confidence pseudo-labels
     
     print("Starting training")
     for epoch in range(config["train_config"]["epochs"]):
@@ -322,6 +323,20 @@ def main():
                 pseudo_prob, pseudo_labels = clip_zs.get_pseudo_labels(gen_imgs_latent, return_prob=True)
                 pseudo_prob = [pm.detach() for pm in pseudo_prob]
                 pseudo_labels = [pl.detach() for pl in pseudo_labels]
+
+            # Calculate ratio of low-confidence pseudo-labels
+            total_low_confidence = 0
+            total_predictions = 0
+            for cdx in range(len(pseudo_prob)):
+                if args.dataset == 'cub' or args.dataset == 'cub64':
+                    # For CUB datasets, threshold is disabled, so no low-confidence predictions
+                    continue
+                low_conf_mask = pseudo_prob[cdx] < pl_prob_thresh
+                total_low_confidence += low_conf_mask.sum().item()
+                total_predictions += len(pseudo_prob[cdx])
+            
+            low_confidence_ratio = total_low_confidence / total_predictions if total_predictions > 0 else 0.0
+            pseudo_label_low_confidence_ratios.append(low_confidence_ratio)
 
             # concept alignment loss
             concept_loss, _ = get_pseudo_concept_loss(model, concepts, pseudo_labels, pseudo_prob, pl_prob_thresh=pl_prob_thresh, device=device, dataset=args.dataset)
@@ -423,6 +438,7 @@ def main():
                 recent_intervened_concept_losses = intervened_concept_losses[-100:]
                 recent_intervened_pseudo_label_losses = intervened_pseudo_label_losses[-100:]
                 recent_total_intervened_losses = total_intervened_losses[-100:]
+                recent_pseudo_label_low_confidence_ratios = pseudo_label_low_confidence_ratios[-100:]
                 
                 # Log individual losses with batches_done as x-axis
                 wandb.log({
@@ -433,6 +449,7 @@ def main():
                     "intervened_concept_loss": np.mean(recent_intervened_concept_losses),
                     "intervened_pseudo_label_loss": np.mean(recent_intervened_pseudo_label_losses),
                     "intervention_loss": np.mean(recent_total_intervened_losses),
+                    "low_confidence_ratio": np.mean(recent_pseudo_label_low_confidence_ratios),
                 }, step=batches_done)
             
             if batches_done % config["train_config"]["log_interval"] == 0:
