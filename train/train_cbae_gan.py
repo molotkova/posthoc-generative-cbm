@@ -86,9 +86,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-d", "--dataset",default="celebahq",help="benchmark dataset")
     parser.add_argument("-e", "--expt-name", default="cbae_stygan2", help="name for saving images and checkpoint")
-    parser.add_argument("-t", "--tensorboard-name", default="clipzs", help="suffix for tensorboard experiment name")
+    parser.add_argument("-t", "--tensorboard-name", default="", help="suffix for tensorboard experiment name")
     parser.add_argument("-p", "--pseudo-label", type=str, default='clipzs', help='choice of pseudo-label source: clip zero shot or supervised')
-    parser.add_argument("-s", "--save-postfix", type=str, default='', help='postfix to add to saved model filename')
+
     parser.add_argument("--load-pretrained", action='store_true', default=False, help='whether to load pretrained CB-AE checkpoint from models/checkpoints/.')
     parser.add_argument("--pretrained-load-name", type=str, default='', help='filename to load from models/checkpoints/')
     parser.add_argument("--out-dir", type=str, default=None, help='output directory for saving results')
@@ -152,7 +152,7 @@ def main():
     ignore_index = 250
 
     if config["train_config"]["save_model"]:
-        save_model_name =  f"{config['dataset']['name']}_{args.expt_name}_{args.tensorboard_name}_{args.save_postfix}"
+        save_model_name = f"{config['dataset']['name']}_{args.expt_name}_{args.tensorboard_name}"
 
     if config["evaluation"]["save_images"] or config["evaluation"]["save_concept_image"]:
         os.makedirs(generation_checkpoints_base, exist_ok=True)
