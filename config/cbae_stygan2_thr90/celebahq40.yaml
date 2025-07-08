@@ -3,7 +3,7 @@ dataset:
   transforms_1: (0.5)
   transforms_2: (0.5)
   img_size: 256
-  batch_size: 8
+  batch_size: 16
   test_batch_size: 100
   num_channels: 3
 model:
@@ -72,14 +72,14 @@ model:
               "bin", "bin", "bin", "bin", "bin", "cat"]
 
 train_config:
-  epochs: 1
+  epochs: 50
   recon_lr: 0.0002
   conc_lr: 0.0002
   betas: (.5, .99)
   save_model: True
   use_cuda: True
   log_interval: 100
-  steps_per_epoch: 1
+  steps_per_epoch: 1000
   pl_prob_thresh: 0.9
   plot_loss: True
 evaluation:
