@@ -8,6 +8,7 @@ scripts/submit*
 *.out
 cluster_submission/logs_cluster
 cluster_submission/*.sh
+output/
 
 __pycache__/
 *.py[cod]
