@@ -92,6 +92,7 @@ def main():
     parser.add_argument("--load-pretrained", action='store_true', default=False, help='whether to load pretrained CB-AE checkpoint from models/checkpoints/.')
     parser.add_argument("--pretrained-load-name", type=str, default='', help='filename to load from models/checkpoints/')
     parser.add_argument("--out-dir", type=str, default=None, help='output directory for saving results')
+    parser.add_argument("--job-id", type=str, default=None, help='cluster job id for wandb')
     args = parser.parse_args()
     args.config_file = f"./config/{args.expt_name}/"+args.dataset+".yaml"
 
@@ -136,6 +137,7 @@ def main():
             "betas": config["train_config"]["betas"],
             "pl_prob_thresh": config["train_config"]["pl_prob_thresh"],
             "steps_per_epoch": config["train_config"]["steps_per_epoch"],
+            "job_id": args.job_id,
         }
     )
 
@@ -231,6 +233,48 @@ def main():
             ['NOT Young', 'Young']
         ]
         clsf_model_type = 'rn18'
+    elif args.dataset == 'celebahq40' and args.pseudo_label == 'clipzs':
+        set_of_classes = [ ['NO 5 o Clock Shadow', '5 o Clock Shadow'],
+            ['Straight Eyebrows', 'Arched Eyebrows'],
+            ['NOT Attractive', 'Attractive'],
+            ['NO Bags Under Eyes', 'Bags Under Eyes'],
+            ['Has Hair', 'Bald'],
+            ['NO Bangs', 'Bangs'],
+            ['NOT Big Lips', 'Big Lips'],
+            ['Normal Nose', 'Big Nose'],
+            ['NOT Black Hair', 'Black Hair'],
+            ['NOT Blond Hair', 'Blond Hair'],
+            ['Sharp', 'Blurry'],
+            ['NOT Brown Hair', 'Brown Hair'],
+            ['NOT Bushy Eyebrows', 'Bushy Eyebrows'],
+            ['Thin', 'Chubby'],
+            ['NO Double Chin', 'Double Chin'],
+            ['NO Eyeglasses', 'Eyeglasses'],
+            ['WITHOUT Goatee', 'Goatee'],
+            ['NO Gray Hair', 'Gray Hair'],
+            ['WITHOUT Heavy Makeup', 'Heavy Makeup'],
+            ['Low Cheekbones', 'High Cheekbones'],
+            ['Female', 'Male'],
+            ['Mouth Closed', 'Mouth Slightly Open'],
+            ['Clean-Shaved', 'Mustache'],
+            ['Wide Eyes', 'Narrow Eyes'],
+            ['Full Beard', 'No Beard'],
+            ['WITHOUT Oval Face', 'Oval Face'],
+            ['NOT Pale Skin', 'Pale Skin'],
+            ['NOT Pointy Nose', 'Pointy Nose'],
+            ['NO Receding Hairline', 'Receding Hairline'],
+            ['NO Rosy Cheeks', 'Rosy Cheeks'],
+            ['Trimmed WITHOUT Sideburns', 'Sideburns'],
+            ['NOT Smiling', 'Smiling'],
+            ['NOT Straight Hair', 'Straight Hair'],
+            ['NOT Wavy Hair', 'Wavy Hair'],
+            ['NO Earrings', 'Wearing Earrings'],
+            ['NO Hat', 'Wearing Hat'],
+            ['NOT Wearing Lipstick', 'Wearing Lipstick'],
+            ['NOT Wearing Necklace', 'Wearing Necklace'],
+            ['WITHOUT Necktie', 'Wearing Necktie'],
+            ['Old', 'Young']
+            ]
     elif args.dataset == 'cub' or args.dataset == 'cub64':
         set_of_classes = [
             ['Large size', 'Small size 5 to 9 inches'],
