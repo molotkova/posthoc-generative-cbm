@@ -4,8 +4,8 @@ getenv = true
 
 should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT
-transfer_input_files =  test_stygan2_execute.sh
-transfer_output_files =  /home/somo0003/posthoc-generative-cbm/images
+transfer_input_files =  train_stygan2_cbae.sh
+transfer_output_files =  /home/somo00003/posthoc-generative-cbm/output/output_$(Clusterid)_$(ProcId)
 
 requirements = ((UidDomain == "cs.uni-saarland.de") &&  (GPUs_GlobalMemoryMb >= 16000))  && (GPUs_GlobalMemoryMb < 18000)
 +WantGPUHomeMounted = true
@@ -13,12 +13,13 @@ requirements = ((UidDomain == "cs.uni-saarland.de") &&  (GPUs_GlobalMemoryMb >= 
 request_GPUs = 1
 request_CPUs = 8
 request_memory = 16G
-executable = test_stygan2_execute.sh
+executable = train_stygan2_cbae.sh
 
 output = logs_cluster/$(Clusterid).$(ProcId).out
 error  = logs_cluster/$(Clusterid).$(ProcId).err
 log    = logs_cluster/$(Clusterid).$(ProcId).log
 
+environment = "CLUSTER_ID=$(Clusterid) PROC_ID=$(ProcId)"
 arguments = ""
 
 queue
